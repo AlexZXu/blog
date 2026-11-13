@@ -1,0 +1,51 @@
+---
+import { Image, getImage } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import Comments from '../components/Comments.astro';
+import { render } from 'astro:content';
+import { getPosts, longDate, fontStyle, BLOG_NAME, COVER_SIZES, COVER_WIDTHS, type Post } from '../lib/posts';
+
+export async function getStaticPaths() {
+	const posts = await getPosts();
+	return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props as { post: Post };
+const { Content, remarkPluginFrontmatter } = await render(post);
+const minutes = Math.max(1, Math.round(remarkPluginFrontmatter?.minutesRead ?? 1));
+// Social previews want a plain JPEG around 1200px wide.
+const ogImage = post.data.image && (await getImage({ src: post.data.image, width: 1200, format: 'jpg' })).src;
+---
+
+<Layout
+	title={`${post.data.title} — ${BLOG_NAME}`}
+	description={post.data.summary}
+	fonts={post.data.font ? [post.data.font] : []}
+	image={ogImage}
+>
+	<article class="post" style={fontStyle(post)}>
+		<header>
+			<h1>{post.data.title}</h1>
+			<p class="summary">{post.data.summary}</p>
+			<p class="meta">
+				<time datetime={post.data.date.toISOString()}>{longDate.format(post.data.date)}</time>
+				· {minutes} min read
+				{post.data.draft && <strong>· Draft</strong>}
+			</p>
+			{post.data.image && (
+				<Image class="cover" src={post.data.image} alt={post.data.imageAlt} widths={COVER_WIDTHS} sizes={COVER_SIZES} loading="eager" />
+			)}
+		</header>
+
+		<Content />
+
+		<footer>
+			<div class="qed" aria-hidden="true"></div>
+			{post.data.signoff && <p class="signoff">{post.data.signoff}</p>}
+		</footer>
+	</article>
+
+	{!post.data.draft && <Comments />}
+
+	<p class="back"><a href="/">&larr; All posts</a></p>
+</Layout>

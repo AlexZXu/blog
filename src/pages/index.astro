@@ -1,0 +1,50 @@
+---
+import { Image } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import { getPosts, excerpt, shortDate, fontStyle, BLOG_NAME, BLOG_DESCRIPTION, COVER_SIZES, COVER_WIDTHS } from '../lib/posts';
+
+const posts = await getPosts();
+const fonts = posts.flatMap((p) => (p.data.font ? [p.data.font] : []));
+
+const groups = [
+	{ id: 'essays', label: 'Essays', items: posts.filter((p) => p.data.kind === 'essay') },
+	{ id: 'notes', label: 'Notes', items: posts.filter((p) => p.data.kind === 'note') },
+];
+---
+
+<Layout title={`Blog — ${BLOG_NAME}`} description={BLOG_DESCRIPTION} fonts={fonts}>
+	{posts.length === 0 && <p class="empty">Nothing here yet.</p>}
+
+	{groups.map((group) =>
+		group.items.length > 0 ? (
+			<section class="group" aria-labelledby={group.id}>
+				<h2 id={group.id}>{group.label}</h2>
+				<ul class="posts">
+					{group.items.map((post) => {
+						const { text, more } = excerpt(post);
+						return (
+						<li style={fontStyle(post)}>
+							<div class="row">
+								<a class="title" href={`/${post.id}/`}>{post.data.title}</a>
+								<time datetime={post.data.date.toISOString()}>
+									{shortDate.format(post.data.date)}
+									{post.data.draft && ' · Draft'}
+								</time>
+							</div>
+							{post.data.image && (
+								<a href={`/${post.id}/`} tabindex="-1" aria-hidden="true">
+									<Image class="cover" src={post.data.image} alt={post.data.imageAlt} widths={COVER_WIDTHS} sizes={COVER_SIZES} />
+								</a>
+							)}
+							<p class="excerpt">
+								{text}
+								{more && <a class="more" href={`/${post.id}/`}>Read more…</a>}
+							</p>
+						</li>
+						);
+					})}
+				</ul>
+			</section>
+		) : null
+	)}
+</Layout>

@@ -1,0 +1,61 @@
+---
+import Analytics from '@vercel/analytics/astro';
+import { BLOG_NAME, BLOG_DESCRIPTION, fontHref } from '../lib/posts';
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description: string;
+	/** Extra Google Fonts families the page uses (per-post fonts). */
+	fonts?: string[];
+	/** Path to a social preview image. */
+	image?: string;
+}
+
+const { title, description, fonts = [], image } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="icon" href="/favicon.ico" sizes="any" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+		<meta property="og:type" content="article" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		{image && <meta property="og:image" content={new URL(image, Astro.site)} />}
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" />
+		{[...new Set(fonts)].map((family) => <link rel="stylesheet" href={fontHref(family)} />)}
+
+		<link rel="alternate" type="application/rss+xml" title={`${BLOG_NAME} — Blog`} href="/rss.xml" />
+	</head>
+
+	<body>
+		<header class="site-header">
+			<a href="/">{BLOG_NAME}</a>
+			<p>{BLOG_DESCRIPTION}</p>
+		</header>
+
+		<main>
+			<slot />
+		</main>
+
+		<footer class="site-footer">
+			&copy; {year} {BLOG_NAME} · <a href="/rss.xml">RSS</a>
+		</footer>
+
+		<Analytics />
+	</body>
+</html>
